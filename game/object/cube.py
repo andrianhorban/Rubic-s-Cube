@@ -5,42 +5,52 @@ from game.static.values.constants import vertices, colors
 
 class Cube():
 
-    def __init__(self, id, N, scale):
-        self.N = N
+    def __init__(self, id, size, scale):
+        self.size = size
         self.scale = scale
-        self.init_i = [*id]
-        self.current_i = [*id]
-        self.rot = [[1 if i == j else 0 for i in range(3)] for j in range(3)]
+        self.start_pos = [*id]
+        self.pos = [*id]
+        self.rotating = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 
-    def is_affected(self, axis, slice):
-        return self.current_i[axis] == slice
+    def is_affected(self, axle, piece):
+        b_check = self.pos[axle] == piece
+        return b_check
 
-    def update(self, axis, slice, direction):
+    def updating(self, axle, piece, direction):
 
-        if not self.is_affected(axis, slice):
-            return
+        if not self.is_affected(axle, piece):
+            return None
 
-        i, j = (axis + 1) % 3, (axis + 2) % 3
+        i_temp = axle + 1
+        j_temp = axle + 2
+        i, j = i_temp % 3, j_temp % 3
         print(i, j)
         for k in range(3):
-            print(self.rot)
-            self.rot[k][i], self.rot[k][j] = -self.rot[k][j] * direction, self.rot[k][i] * direction
+            self.rotating[k][j], self.rotating[k][i] = self.rotating[k][i] * direction, -self.rotating[k][j] * direction
 
-        self.current_i[i], self.current_i[j] = (
-            self.current_i[j] if direction < 0 else self.N - 1 - self.current_i[j],
-            self.current_i[i] if direction > 0 else self.N - 1 - self.current_i[i])
+        self.pos[i], self.pos[j] = (
+            self.pos[j] if direction < 0 else self.size - 1 - self.pos[j],
+            self.pos[i] if direction > 0 else self.size - 1 - self.pos[i])
+
+        print(self.rotating)
 
     def transform_matrix(self):
+        T = [(l - (self.size - 1) / 2) * 2.08 * self.scale for l in self.pos]
+        A = [[k * self.scale for k in l] for l in self.rotating]
+        return [*A[0],
+                0,
+                *A[1],
+                0,
+                *A[2],
+                0,
+                *T,
+                1]
 
-        scaleA = [[s * self.scale for s in a] for a in self.rot]
-        scaleT = [(p - (self.N - 1) / 2) * 2.1 * self.scale for p in self.current_i]
-        return [*scaleA[0], 0, *scaleA[1], 0, *scaleA[2], 0, *scaleT, 1]
-
-    def draw(self, colors, surface, vertices, animate, angle, axis, slice, direction):
+    def draw(self, colors, surface, vertices, animate, corner, axle, piece, direction):
 
         glPushMatrix()
-        if animate and self.is_affected(axis, slice):
-            glRotatef(angle * direction, *[1 if i == axis else 0 for i in range(3)])
+        if animate and self.is_affected(axle, piece):
+            glRotatef(corner * direction, *[1 if i == axle else 0 for i in range(3)])
         glMultMatrixf(self.transform_matrix())
 
         glBegin(GL_QUADS)
@@ -51,4 +61,3 @@ class Cube():
         glEnd()
 
         glPopMatrix()
-

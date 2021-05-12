@@ -6,7 +6,7 @@ from pygame import KEYDOWN, KEYUP, K_r, K_q
 
 from game.object.cube import Cube
 from game.static.values.constants import vertices, \
-    rot_slice, rot_cube, values, surfaces, colors
+    rot_piece, rot_camera, values, surfaces, colors
 
 
 class game():
@@ -28,16 +28,16 @@ class game():
                 if key == elem:
                     print("tr", key)
 
-                    animate, action = True, rot_slice[val]
+                    animate, action = True, rot_piece[val]
                     if animate:
                         for cube in self.cubes:
                             print(*action)
-                            cube.update(*action)
+                            cube.updating(*action)
 
     def mainloop(self):
 
-        ang_x, ang_y, rot_cube = 0, 0, (0, 0)
-        animate, animate_ang, animate_speed = False, 0, 6
+        corner_x, corner_y, rot_cube = 0, 0, (0, 0)
+        animate, animate_corner, animate_speed = False, 0, 6
         action = (0, 0, 0)
 
         while True:
@@ -47,10 +47,10 @@ class game():
                     pygame.quit()
                     quit()
                 if event.type == KEYDOWN:
-                    if event.key in rot_cube:
-                        rot_cube = rot_cube[event.key]
-                    if not animate and event.key in rot_slice:
-                        animate, action = True, rot_slice[event.key]
+                    if event.key in rot_camera:
+                        rot_cube = rot_camera[event.key]
+                    if not animate and event.key in rot_piece:
+                        animate, action = True, rot_piece[event.key]
                     if event.key == K_r:
                         self.randomize()
                     if event.key == K_q:
@@ -58,11 +58,11 @@ class game():
                         quit()
 
                 if event.type == KEYUP:
-                    if event.key in rot_cube:
+                    if event.key in rot_camera:
                         rot_cube = (0, 0)
 
-            ang_x += rot_cube[0]
-            ang_y += rot_cube[1]
+            corner_x += rot_cube[0]
+            corner_y += rot_cube[1]
 
             glMatrixMode(GL_MODELVIEW)
 
@@ -70,22 +70,23 @@ class game():
 
             glTranslatef(0, 0, -38)
 
-            glRotatef(ang_y, 0, 1, 0)
+            glRotatef(corner_y, 0, 1, 0)
 
-            glRotatef(ang_x, 1, 0, 0)
+            glRotatef(corner_x, 1, 0, 0)
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
             if animate:
-                if animate_ang >= 90:
-                    for cube in self.cubes:
-                        cube.update(*action)
-                    animate, animate_ang = False, 0
+                if animate_corner >= 90:
+                    for i in self.cubes:
+                        i.updating(*action)
+                    animate = False
+                    animate_corner = 0
 
             for cube in self.cubes:
-                cube.draw(colors, surfaces, vertices, animate, animate_ang, *action)
+                cube.draw(colors, surfaces, vertices, animate, animate_corner, *action)
             if animate:
-                animate_ang += animate_speed
+                animate_corner = animate_corner + animate_speed
 
             pygame.display.flip()
             pygame.time.wait(10)
